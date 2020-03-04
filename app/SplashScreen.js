@@ -2,27 +2,34 @@ import React , { Component } from 'react' ;
 import {View , Image ,  StyleSheet , Animated , AsyncStorage } from 'react-native' ;
 import LogoImage from './img/bloodicon.png' ;
 import BackImage from './img/logo.png' ;
+import firebase from './config';
 
 
 class SplashScreen extends Component {
         
-  constructor ()
+  constructor (props)
   {
-    super();
+    super(props);
     this.koora = new Animated.ValueXY(0,0);
     this.x = new Animated.ValueXY(0,50); 
+    console.disableYellowBox = true;
   }
   
   componentDidMount()
   {
-    Animated.timing(this.koora,{
-      toValue : { x : 250 , y: 300 } ,
-      duration : 2000, 
-      delay : 500 , 
+   
+      Animated.timing(this.koora,{
+        toValue : { x : 250 , y: 300 } ,
+        duration : 2000, 
+        delay : 500 , 
+        
+      }).start();
+  
+  
+    
+    
+    
       
-    }).start();
-
-
   }
 
 

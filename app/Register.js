@@ -1,13 +1,14 @@
 import React , {Component}from 'react';
-import { StyleSheet , View , Text , Image  , TextInput,  Button , ScrollView ,ToastAndroid
+import { StyleSheet , View , Text , Image  , TextInput,  Button  , ScrollView ,ToastAndroid
     , TouchableOpacity,  Alert } from 'react-native';
-import ImagePiker from 'react-native-image-picker' ;
+import { Icon } from 'native-base' ;  
+import ImagePicker from 'react-native-image-picker';    
 import { ActionSheetCustom as ActionSheet } from 'react-native-custom-actionsheet';
 import firebase from './config';
 
 const title = <Text style={{ color: 'red', fontSize: 18 }}>عليك اختيار فصيلة الدم ؟ </Text>
 const CANCEL_INDEX = 0
-const DESTRUCTIVE_INDEX = 9 
+const DESTRUCTIVE_INDEX = 10
 var id = 1;
 const options = [
     'Cancel',
@@ -22,52 +23,45 @@ const options = [
     
   ]
 
- 
+  
 export default class Register extends Component 
 {
     
     constructor(props)
     {
         super(props);
-        this.state = { username : '' , email : '' , password : '' , confirmpassword : '' ,
+        this.state = { username : '' , email : '' , password : '' , confirmpassword : '' , photo: null,
          address : '' , age : '' , phone : ''
         , avatar : './img/vector.png' , selected: 1 }
-     
+        console.disableYellowBox = true;
+        
     }
     static navigationOptions = {header: null}
 
-/*
-    addavatar = () => 
-    {
-      ImagePiker.showImagePicker({},response => {
-        if (response.didCancel)
-        {
-          console.warn("Really ");
-        }
-        else if (response.error)
-        {
-          console.warn(response.error);
-        }
-        else 
-        {
-          this.setState({
-            avatar:response.uri
-          })
-        }
-      })
-    }
-*/
     showActionSheet = () => this.actionSheet.show() 
     getActionSheetRef = ref => (this.actionSheet = ref)
-    handlePress = index =>this.setState({ selected: index }) 
-  
+    handlePress = index =>this.setState({ selected: index });
+
+    handleChoosePhoto = () => {
+      const options = {
+        noData: true,
+      };
+      ImagePicker.launchImageLibrary(options, response => {
+        if (response.uri) {
+          this.setState({ photo: response });
+        }
+      });
+      
+    };
+
     OnloginPress()
     {
       this.props.navigation.navigate('Login');
     }
 
-    OnRegisterPress()
+    OnNewRegisterPress()
     {
+      
         if (this.validation_check())
         {
           
@@ -83,57 +77,60 @@ export default class Register extends Component
                 50,
                 );
 
-
-
-
             }
             else 
             {
 
-              
-           firebase.database().ref(`USERS`).push(
-            {
-                email : this.state.email,
-                username : this.state.username,
-                password : this.state.password,
-                address : this.state.address,
-                phone : this.state.phone,
-                age : this.state.age ,
-                selected : options[this.state.selected].component || options[this.state.selected]
-               
-            }
-          ).then(() => {
-            
-            firebase.auth().createUserWithEmailAndPassword(this.state.email,this.state.password)
+              firebase.auth().createUserWithEmailAndPassword(this.state.email,this.state.password)
+          .then(() => {
+            var user = firebase.auth().currentUser ;
+
+            firebase.database().ref(`USERS/${user.uid}`).set(
+              {
+                  email : this.state.email,
+                  username : this.state.username,
+                  password : this.state.password,
+                  address : this.state.address,
+                  phone : this.state.phone,
+                  age : this.state.age ,
+                  selected : options[this.state.selected].component || options[this.state.selected]
+                 
+              }) 
             .then(()=>{
-                  
+              firebase.database().ref(`USER-BLOOD/${user.uid}`).set(
+                {
+                    email : this.state.email,
+                    phone : this.state.phone,
+                    selected : options[this.state.selected].component || options[this.state.selected]
+                   
+                })     
               ToastAndroid.showWithGravityAndOffset(
               ' تم تسجيل البيانات بنجاح ',
               ToastAndroid.SHORT,
               ToastAndroid.BOTTOM,
               25,
               50,
-          );
-          ++id;
-          this.props.navigation.navigate('Login');
-
-          
-      }).catch((e)=>{
-          ToastAndroid.showWithGravityAndOffset(
-              'الايميل موجود بالفعل',
-              ToastAndroid.SHORT,
-              ToastAndroid.BOTTOM,
-              25,
-              50,
               );
+             // alert("User" + user.uid);
+              this.props.navigation.navigate('Login');
+              
+      }).catch((e)=>{
 
+        ToastAndroid.showWithGravityAndOffset(
+          'توجد مشكلة في حفظ البيانات ',
+          ToastAndroid.SHORT,
+          ToastAndroid.BOTTOM,
+          25,
+          50,
+          );
+      
       });
       
 
-          }).catch((e) => 
+    }).catch((e) => 
           {
             ToastAndroid.showWithGravityAndOffset(
-              'توجد مشكلة في حفظ البيانات ',
+              'الايميل موجود بالفعل',
               ToastAndroid.SHORT,
               ToastAndroid.BOTTOM,
               25,
@@ -148,14 +145,28 @@ export default class Register extends Component
       }
     }
         
-
     validation_check =()=>
     {
         const number = /^[0-9]*$/;
         const experssion = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
         const { username , email  , password  , confirmpassword ,
         address , age , phone  } = this.state ;
-        if(email == "")
+        
+        if (options[this.state.selected].component || options[this.state.selected] == ""
+         || options[this.state.selected].component || options[this.state.selected] == 'Cancel')
+        {
+          ToastAndroid.showWithGravityAndOffset(
+            'Type of BloOd is Required ',
+            ToastAndroid.SHORT,
+            ToastAndroid.BOTTOM,
+            25,
+            50,
+            );
+        return false;
+        }
+        
+        
+         else if(email == "")
         {   ToastAndroid.showWithGravityAndOffset(
             'Em@il is Required',
             ToastAndroid.SHORT,
@@ -178,7 +189,8 @@ export default class Register extends Component
                 );
             return false;
         }
-     
+        
+
         else if (username == "")
         {
             
@@ -309,17 +321,26 @@ export default class Register extends Component
 render() {
   const { selected } = this.state
   const selectedText = options[selected].component || options[selected]
-
+  const { photo } = this.state 
     return (
        
-      <ScrollView style = {styles.view}>
+       <ScrollView style = {styles.view}>
+          
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        {photo && (
+          <Image
+            source={{ uri: photo.uri }}
+            style={{ width: 130, height: 130 , borderRadius : 80 , marginTop : '10%' }}
+          />
+        )}
         
-        <Image source = {require('./img/logo.png')} style = {{  marginLeft : '15%' , marginTop : '5%' ,
-            width : 250 , height : 200 }}/>
-
-
+        <TouchableOpacity style = {styles.button}
+         onPress={this.handleChoosePhoto}>
+           <Text style = {{ alignSelf : "center" , color : '#2980B9' , fontSize : 15 }}> تحميل صورة </Text>
+            </TouchableOpacity>
+      </View>         
         
-        <View style = {{ marginTop : '0%'}}>
+        <View style = {{ marginTop : '5%'}}>
 
 
         <TextInput style={ styles.input}
@@ -382,7 +403,7 @@ render() {
         <TouchableOpacity style = {styles.button}
         onPress={this.showActionSheet}
         >
-           <Text style = { styles.txt}> تحديد فصيلة الدم  </Text>  
+           <Text style = {{ alignSelf : "center" , color : '#2980B9' , fontSize : 18 }}> تحديد فصيلة الدم  </Text>  
             </TouchableOpacity>      
         
 
@@ -398,10 +419,10 @@ render() {
         />
     
         <TouchableOpacity style = {styles.button}
-          onPress = {this.OnRegisterPress.bind(this)}
+          onPress = {this.OnNewRegisterPress.bind(this)}
         
         >
-           <Text style = { styles.txt}> تـسجيل البيانات </Text>
+           <Text style = {{ alignSelf : "center" , color : '#2980B9' , fontSize : 18 }}> تـسجيل البيانات </Text>
             </TouchableOpacity>
 
             <TouchableOpacity style = {styles.buttonline}>
@@ -437,8 +458,9 @@ const styles = StyleSheet.create(
         },
         button :
         {
-            marginTop : '5%' , height : 40 , width : '90%' ,  borderRadius : 15 , marginLeft : '5%' ,
-            justifyContent : 'center' , backgroundColor : '#2980B9'  , padding : 15
+          borderWidth : .5  , padding : 10 , borderColor : '#2980B9' 
+          , borderRadius : 20 , marginTop : '5%' , marginLeft : '5%' , marginRight : '5%' 
+          , textAlign : 'center' , color : '#ECF0F1' , fontSize : 15 
         } , 
 
         buttonline :
@@ -455,3 +477,108 @@ const styles = StyleSheet.create(
     });
     
 // {selectedText} value of Actionsheet
+/*
+    OnRegisterPress()
+    {
+        if (this.validation_check())
+        {
+          
+          firebase.database().ref("USERS").orderByChild("email").equalTo(this.state.email)
+          .once("value",snapshot => {
+            if (snapshot.exists()){
+             
+                ToastAndroid.showWithGravityAndOffset(
+                'الايميل موجود بالفعل',
+                ToastAndroid.SHORT,
+                ToastAndroid.BOTTOM,
+                25,
+                50,
+                );
+
+
+
+
+            }
+            else 
+            {
+
+              
+           firebase.database().ref(`USERS`).push(
+            {
+                email : this.state.email,
+                username : this.state.username,
+                password : this.state.password,
+                address : this.state.address,
+                phone : this.state.phone,
+                age : this.state.age ,
+                selected : options[this.state.selected].component || options[this.state.selected]
+               
+            }
+          ).then(() => {
+            
+            firebase.auth().createUserWithEmailAndPassword(this.state.email,this.state.password)
+            .then(()=>{
+                  
+              ToastAndroid.showWithGravityAndOffset(
+              ' تم تسجيل البيانات بنجاح ',
+              ToastAndroid.SHORT,
+              ToastAndroid.BOTTOM,
+              25,
+              50,
+          );
+          ++id;
+          this.props.navigation.navigate('Login');
+
+          
+      }).catch((e)=>{
+          ToastAndroid.showWithGravityAndOffset(
+              'الايميل موجود بالفعل',
+              ToastAndroid.SHORT,
+              ToastAndroid.BOTTOM,
+              25,
+              50,
+              );
+
+      });
+      
+
+          }).catch((e) => 
+          {
+            ToastAndroid.showWithGravityAndOffset(
+              'توجد مشكلة في حفظ البيانات ',
+              ToastAndroid.SHORT,
+              ToastAndroid.BOTTOM,
+              25,
+              50,
+              );
+  
+          })
+      
+      
+            }
+        });
+      }
+    }
+  */      
+
+/*
+    addavatar = () => 
+    {
+      ImagePiker.showImagePicker({},response => {
+        if (response.didCancel)
+        {
+          console.warn("Really ");
+        }
+        else if (response.error)
+        {
+          console.warn(response.error);
+        }
+        else 
+        {
+          this.setState({
+            avatar:response.uri
+          })
+        }
+      })
+    }
+*/

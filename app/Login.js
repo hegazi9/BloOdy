@@ -11,8 +11,25 @@ export default class Login extends Component
     {
         super(props);
         this.state = {  email : '' , password : ''  ,  selected: 1  };
+        console.disableYellowBox = true;
     }
     static navigationOptions = {header: null}
+    
+    componentDidMount()
+    {
+        var user = firebase.auth().currentUser ;    
+        if(user != null)
+        {
+            this.props.navigation.navigate('Home'); 
+            
+        }
+
+    }
+
+    OnRegisterPress()
+    {
+        this.props.navigation.navigate('Register');
+    }
 
     OnloginPress()
     {
@@ -30,6 +47,9 @@ export default class Login extends Component
                         50,
                     );
                     this.props.navigation.navigate('Home');
+                    this.setState({
+                        email : '' , password : ''
+                    })
                //     console.warn('user'+this.state.email);
                     
                 }).catch((e)=>{
@@ -135,7 +155,13 @@ render() {
         <TouchableOpacity style = {styles.button}
           onPress = {this.OnloginPress.bind(this)}
         >
-           <Text style = { styles.txt}> تـسجيــل الدخــول </Text>
+           <Text style = {{  alignSelf : "center" , color : '#2980B9' , fontSize : 15  }}> تـسجيــل الدخــول </Text>
+            </TouchableOpacity>
+            <TouchableOpacity style = {styles.buttonline}>
+           <Text style = {{  alignSelf : "center" , color : '#58D68D' , fontSize : 15  }}
+            onPress = {this.OnRegisterPress.bind(this)}
+           >
+                لا تمتلك حـسـاب ؟ برجــاء تـسجيل البيانات </Text>
             </TouchableOpacity>
 
 
@@ -163,18 +189,19 @@ const styles = StyleSheet.create(
         },
         button :
         {
-            marginTop : '15%' , height : '15%' , width : '90%' ,  borderRadius : 15 , marginLeft : '5%' ,
-            justifyContent : 'center' , backgroundColor : '#2980B9' 
+          borderWidth : .5  , padding : 10 , borderColor : '#2980B9' 
+          , borderRadius : 20 , marginTop : '5%' , marginLeft : '5%' , marginRight : '5%' 
+          , textAlign : 'center' , color : '#ECF0F1' , fontSize : 15 
         } , 
 
         buttonline :
         {
-            marginTop : '2%' , height : '10%' , width : '50%' ,  justifyContent : 'center' , marginLeft : '25%'
-
+            marginTop : '5%' , height : '10%' , width : '80%' ,  justifyContent : 'center' , marginLeft : '10%'
+          ,    marginBottom : '15%'
         }, 
         txt : 
         {
-            alignSelf : "center" , color : '#ECF0F1' , fontSize : 18  , paddingBottom : '5%' 
+            alignSelf : "center" , color : '#ECF0F1' , fontSize : 18 
             
           }
     
